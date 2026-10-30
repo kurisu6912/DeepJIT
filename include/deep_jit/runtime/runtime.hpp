@@ -103,8 +103,8 @@ private:
                 else
                     return entry.path;
             } catch (const std::exception& error) {
-                // Only timed-out IO can still be using this directory.
-                entry.abandoned = dynamic_cast<const IOTimeoutError*>(&error) != nullptr;
+                // Background IO or compiler processes may still be using this directory.
+                entry.abandoned = true;
                 disk_cache.report_error(entry.root_index, error);
                 first_root = entry.root_index + 1;
                 if (first_root == disk_cache.paths.size()) throw;

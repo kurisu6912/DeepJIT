@@ -24,6 +24,7 @@ FILESYSTEM_CASES = [
     'rename_collision', 'rename_collision_bad_winner', 'rename_collision_uncommitted',
     'hang_read', 'hang_read_after_prefix', 'hang_write', 'hang_write_after_prefix',
     'hang_fsync', 'hang_commit', 'hang_rename', 'hang_mkdir', 'hang_lookup', 'all_roots_hang',
+    'command_infinite', 'command_fifo', 'command_closed_output', 'command_active_output',
 ]
 SITE_CASES = {
     'sites_cold': {'stat', 'mkdir', 'fopen_write', 'write', 'writev', 'fclose_write',
@@ -33,7 +34,7 @@ SITE_CASES = {
     'sites_shared': {'fchmodat', 'fsync', 'rename', 'read'},
     'sites_cleanup': {'remove', 'readdir', 'closedir'},
 }
-CASES = list(SITE_CASES) + ['cache_regression', *FILESYSTEM_CASES]
+CASES = list(SITE_CASES) + ['cache_regression', 'command_regression', *FILESYSTEM_CASES]
 
 
 def stop_process_tree(process):
@@ -64,6 +65,8 @@ def main():
     def source_for(case):
         if case == 'cache_regression':
             return 'cache'
+        if case == 'command_regression':
+            return 'command'
         return 'filesystem'
 
     for source in sorted({source_for(case) for case in selected}):

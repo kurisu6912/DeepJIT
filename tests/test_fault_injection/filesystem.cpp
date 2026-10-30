@@ -224,6 +224,15 @@ struct Backend {
         ++builds;
         if (armed and primary(path.string()) and root_fault == 3)
             call_external_command("exit 7");
+        if (armed and primary(path.string()) and scenario.starts_with("command_")) {
+            const std::string command = scenario == "command_fifo" ?
+                "mkfifo " + (path / "compiler.fifo").string() + "; exec cat " + (path / "compiler.fifo").string() :
+                scenario == "command_closed_output" ? "exec 1>&- 2>&-; exec sleep infinity" :
+                scenario == "command_active_output" ? "while :; do echo progress; sleep 0.01; done" :
+                "exec sleep infinity";
+            ++injections;
+            call_external_command(command, false, 100ms);
+        }
         run_in_iothread([path] {
             write_file_sync(path / "binary", binary);
             write_file_sync(path / "metadata", metadata);
@@ -457,6 +466,8 @@ int main(int argc, char** argv) {
     if (not scenario.starts_with("missing_") and scenario != "empty_binary" and
         scenario != "truncated_binary" and scenario != "stale_metadata")
         assert(injections > 0); // a passing test must have actually reached its injection point
+    if (scenario.starts_with("command_"))
+        assert(not fs::is_empty(root / "primary/tmp")); // killed commands may still be in uninterruptible IO
     if (scenario.starts_with("hang_")) {
         assert(blocked == 1);
         assert(run_in_iothread([] { return 42; }) == 42);
